@@ -1,0 +1,41 @@
+## Load Data and Libraries 
+library(tseries)
+library(vars)
+
+setwd("~/Ireland Econ")
+data.gdp <- read.table("GDP.csv",header = T, sep = ",")
+rgdp <- ts(data.gdp[,2],start = 1997, frequency = 4)
+
+data.yield <- read.table("3 month interbank rate.csv",header = T, sep = ",")
+Int <- ts(data.yield[,2], start = 1997, frequency = 4)
+
+
+## Quarterly GDP Growth Rate
+dlrgdp = 400* diff(log(rgdp))
+Output <- dlrgdp
+plot(Output)
+## Plot Data
+plot(Output, col = "blue", main = "Real GDP Growth Rate and 3 Month Interbank Rates", xlab = "Time", ylab = "Rate %")
+lines(Int, col = "red", lwd = 1) ## all looks good, n is small for both datasets
+
+### VAR analysis 
+## Bind Data 
+data.y.int <- ts(cbind(Output,Int[1:75]))
+
+acf(data.y.int, lag.max = 20)
+
+## Select order of VAR 
+VARselect(data.y.int,lag.max=16,type="const")
+
+## VAR Estimation and summary 
+var.y.int <- VAR(data.y.int,p=14)
+
+summary(var.y.int)
+
+## check fit and residuals
+#diagnostic: fit and residuals
+plot(var.y.int)
+roots(var.y.int)
+## Impulse Response
+irf.y.int <- irf(var.y.int,ci = 0.95, ortho=TRUE,runs=100,n.ahead= 20)
+plot(irf.y.int,lwd=2)
